@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Draft recovery demo (local test)</title>
+</head>
+<body>
+  <h1>Sample form</h1>
+  <p>Open DevTools, paste <code>draft-recovery.js</code>, then run <code>DraftStore.init({ recordId: 'demo-1', autoRestore: true })</code>.</p>
+
+  <form>
+    <p>
+      <label>Field A<br>
+        <input name="field_a" value="">
+      </label>
+    </p>
+    <p>
+      <label>Day <select name="date_day"><option value="">—</option><option>01</option><option>15</option><option>28</option></select></label>
+      <label>Month <select name="date_month"><option value="">—</option><option>01</option><option>03</option><option>12</option></select></label>
+      <label>Year <input name="date_year" size="4" placeholder="YYYY"></label>
+    </p>
+    <p>
+      <label>Notes<br>
+        <textarea name="notes" rows="3" cols="40"></textarea>
+      </label>
+    </p>
+  </form>
+
+  <script src="draft-recovery.js"></script>
+</body>
+</html>
