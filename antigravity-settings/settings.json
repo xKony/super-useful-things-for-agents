@@ -1,0 +1,31 @@
+{
+  "colorScheme": "tokyo night",
+  "model": "Gemini 3.8 Flash (High)",
+  "permissions": {
+    "allow": [
+      "read_url(*)",
+      "mcp(*)",
+      "command(*)"
+    ],
+    "deny": [
+      "read_file(/Users/*/.ssh/*)",
+      "write_file(/Users/*/.ssh/*)",
+      "read_file(~/.ssh/*)",
+      "write_file(~/.ssh/*)",
+      "read_file(**/id_rsa*)",
+      "read_file(**/id_ed25519*)",
+      "read_file(**/.aws/credentials*)",
+      "read_file(**/.env*)"
+    ],
+    "ask": [
+      "command(regex:(?i).*\\b(?:Remove-Item|rm|rmdir|del|ri)\\b.*)",
+      "command(git clean)",
+      "command(git reset --hard)",
+      "command(regex:.*git push .*(?:--force|-f).*)",
+      "command(git push)",
+      "command(format)",
+      "command(diskpart)",
+      "command(regex:(?i).*\\b(?:shutdown|reboot|poweroff)\\b.*)"
+    ]
+  }
+}
