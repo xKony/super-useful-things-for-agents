@@ -15,7 +15,7 @@ Run this list against the spec, then surface **at most 3**, ranked by likelihood
 | Files can exceed 100 MB | Action fails on message size | Enable chunking up to 1 GB, or send a link instead of the file |
 | A file may be locked, checked out, or open | Read fails | Retry once after a delay, or read from a copy |
 | File names contain `#`, `%`, or `?` | URL encoding breaks the path | Encode, or reuse the path returned by a `Get files` action instead of building it |
-| Excel is the store | Locked file, stale table, no concurrency control | Read-only Excel, or move state to SharePoint |
+| Excel is the store | Locked file, stale table, the key list hits the 5,000 paginated-item cap, no concurrency control | Read-only Excel, keep the key table under 5,000 rows, or move state to SharePoint |
 
 ## Time
 

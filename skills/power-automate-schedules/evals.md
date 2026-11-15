@@ -40,6 +40,7 @@ Any of these fails the prompt outright:
 - Hides a premium connector inside a free design.
 - Omits the failure policy on a flow with a side effect.
 - Omits the concurrency statement.
+- Claims a run fits the request budget without counting the actions that execute once per loop item.
 - Produces more than 3 warnings, or a paragraph longer than the budget.
 - Puts `utcNow()` in a trigger input.
 - Rebuilds a flow the user asked to diagnose.
