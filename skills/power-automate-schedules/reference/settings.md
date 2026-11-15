@@ -112,6 +112,24 @@ The 10,000 / 200,000 / 500,000 figures are **transition-period** limits. Enforce
 
 If the estimate is close to the ceiling, cut actions, filter at the source, or reduce the cadence. Retries can blow through the estimate without showing up as extra runs.
 
+### Office Scripts limits
+
+`Run script` is part of the Excel Online (Business) connector, which is standard on Microsoft 365. Office Scripts needs a business Microsoft 365 license; E1 and F3 can run scripts from a flow but have no in-Excel integration. The flow runs the script as the connection owner, so the same ownership rule applies.
+
+| Limit | Value | Notes |
+|---|---|---|
+| Synchronous timeout | 120 seconds | Split the script or chunk the rows |
+| Request and response | 5 MB | Keep the payload under the smaller cap |
+| `Run script` parameter | 30,000,000 bytes (28.6 MB) | Pass a text payload, not a wide table |
+| `Run script` calls | 1,600 per user per day | Resets at 00:00 UTC |
+| Range size | 5 million cells | One read or write |
+| External calls | `fetch` is blocked | Scripts run outside your network |
+| Workbook | 25 MB, `.xlsx` or `.xlsb` | ISO strict format fails |
+
+At 2,000 rows, a per-row loop with a scope and a write is 4,000 requests per run. Two runs a day is 8,000, before reads. A batch script is one call per workbook.
+
+Changing a script's parameters or return type means re-adding the `Run script` action. `Run script` reads the script from the maker's OneDrive; `Run script from SharePoint library` reads it from a site, which is the right choice for a team flow.
+
 ## Auto-suspension
 
 | Condition | Consequence |

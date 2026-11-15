@@ -219,3 +219,18 @@ A run lives 30 days. When the run times out, a pending approval goes with it, an
 - Free: finish inside 30 days. Chase the approver from Teams or the Approvals app, and set that expectation before building.
 - Premium: store approvals in Dataverse. A later flow can then act on a response after the original run has timed out.
 - When the business process routinely takes longer than 30 days, say so in Constraints before building.
+
+## P14. Hundreds of rows in one run
+
+Use when: `Apply to each` writes more than a few hundred rows to Excel, or the key list has outgrown the 5,000-item pagination cap. At two actions per row, 2,000 rows is 4,000 requests; two runs a day is 8,000 before reads. The Excel connector also throttles at 100 calls per 60 seconds per connection.
+
+1. Put a `Run script` on the source workbook. Read the table with `getRangeBetweenHeaderAndTotal().getValues()`, filter in TypeScript, and return the rows as one text payload.
+2. Put a `Run script` on the destination workbook. Parse the payload, read the key column, drop blank keys and keys already present, then `addRows` once and write the batch with one `setValues`. Return the appended, skipped, and failed counts plus the failed keys.
+3. Map the first script's `result` into the second script's parameter. After the second, send one email with the counts and keys.
+4. Wrap both scripts in the P2 `Try`/`Catch`, and keep trigger concurrency at `1`. The scripts remove the gap between two flow actions, not the race between two runs.
+
+Why it works: one connector call per workbook replaces one per row, so the 100 calls per 60 seconds throttle, the 5,000-item pagination cap, and most of the request budget disappear. A timed-out script may have written before it failed; the dedupe makes the next run or a retry finish the job instead of duplicating it.
+
+Catch per row inside the script and return the failed keys. A thrown error fails the whole batch, which breaks the per-item isolation that P1 gives you.
+
+Limits: 120 seconds, 5 MB per request or response, 30 MB per parameter, 1,600 calls per user per day (`settings.md`). Pass only the columns the destination needs. `Run script` reads the script from the maker's OneDrive; `Run script from SharePoint library` keeps a team flow's script with the site. If both tables are in one workbook, one script can read, dedupe, and write.

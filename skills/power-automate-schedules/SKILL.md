@@ -5,7 +5,7 @@ description: Design and repair scheduled Power Automate cloud flows. Use when a 
 
 # Power Automate Schedules
 
-Turn a manual process into a scheduled Power Automate **cloud flow** that survives one bad item, and repair schedules that misbehave. The deliverable is clicks, settings, expressions, and the edge cases the user did not think of.
+Turn a manual process into a scheduled Power Automate **cloud flow** that survives one bad item, and repair schedules that misbehave. The deliverable is clicks, settings, expressions, and the edge cases the user did not think of. When a per-item loop would write thousands of rows, it is also a batch script (`reference/patterns.md` P14).
 
 Cloud flows only: the recurrence trigger, built-in actions, and standard connectors. Desktop flows, RPA, Power Apps, Logic Apps, and Copilot Studio are out of scope.
 
@@ -21,6 +21,7 @@ Built-in actions and the recurrence trigger cost nothing. These connectors are s
 |---|---|
 | Start on a schedule | `Recurrence` (built-in) |
 | Store or read rows, including markers | SharePoint `Get items`, `Create item`, `Update item` |
+| Bulk Excel read or append | Excel Online (Business) `Run script` (standard connector; Office Scripts needs a business Microsoft 365 license) |
 | Files | OneDrive for Business, SharePoint files |
 | Email | Office 365 Outlook `Send an email (V2)` |
 | Alert a human | Microsoft Teams `Post message in a chat or channel` |
@@ -43,6 +44,14 @@ Built-in actions and the recurrence trigger cost nothing. These connectors are s
 
 A **safe flow** is **contain, continue, report, idempotent**: one failure stays local, the rest of the run proceeds, a human hears about it, and a re-run does not duplicate the side effect.
 
+## Design order
+
+1. **Safe first.** Contain the failure, continue the rest, report it, and make the side effect happen once.
+2. **Then simple.** Among safe shapes, pick the one with the fewest actions and the fewest moving parts. Do not add a branch, variable, loop, or child flow the requirement does not need.
+3. **Then maintainable.** Keep each business rule in one place: a config list for values a business user changes, a script for row logic, a `Compose` for a constant. A rule copied across ten actions is a flow that breaks on the next change.
+
+A per-row loop is the simplest shape to read up to a few hundred rows. Above that, a batch script is fewer actions and one edit point (`reference/patterns.md` P14). State which tradeoff you took.
+
 ## Answer contract
 
 Pick the shape from the question: **Design** for "build it", **Triage** for "why did it", **Short** for a small flow with no branch or loop.
@@ -64,7 +73,7 @@ Pick the shape from the question: **Design** for "build it", **Triage** for "why
 mermaid diagram
 
 **Do this**
-1. numbered clicks in the designer
+1. numbered clicks in the designer; a script step names the script and its signature
 
 **Settings**
 | Where | Setting | Value | Why |
@@ -108,6 +117,10 @@ Goal, diagram, 3 to 5 numbered steps, settings table, 2 verify steps. Keep a one
 - **Expressions go in copy blocks**, one per line, with the field named above.
 - **Code View and Peek code are read-only.** When the user asks for JSON, say so and give designer clicks. Pasting a flow definition means exporting a solution, editing the definition, and re-importing.
 - **Prose budget about 15 lines.** Steps, tables, diagrams, and code blocks are free. Each sentence changes a click, prevents a known failure, or states an assumption.
+- **A loop that writes isolates per item.** Any `Apply to each` that writes, updates, or sends gets an inner `Scope` plus a run-after log action and a summary alert. A catch wrapped around the whole loop is not isolation (`reference/patterns.md` P1).
+- **A rerun repeats side effects.** Wherever the answer allows a resubmit, rerun, or retry, it says that `Resubmit` replays the original inputs and repeats every side effect that already succeeded.
+- **Verify runs today.** No step may wait for the next scheduled run, "let it run for an hour", or "read the duration tomorrow". Measure duration statically or with a temporary short interval (`reference/patterns.md` P8).
+- **A bulk write names the batch and the throttle.** Above a few hundred rows in one run, the answer offers a `Run script` batch or a budget-correct row cap, and names the connector's per-minute call throttle, not only the daily request budget (`reference/patterns.md` P14).
 - **At most 3 warnings**, ranked by likelihood.
 - **Mirror the user's language and register.** Terse answer to a terse question.
 - **Power Automate's words** for the product (trigger, action, run, scope); the user's words for their process.
@@ -127,7 +140,9 @@ Ask, then answer in the same message using stated defaults:
 ### Done when
 
 - Every spec slot is filled, or its assumption is stated.
+- The shape is the simplest one that meets the safety contract, and each business rule has one edit point.
 - Every send, write, post, approval, or payment names its guard.
+- Any loop that writes contains its own per-item isolation, not just an outer catch.
 - Concurrency and time zone are stated with their consequence.
 - Every verify step runs today, using a manual run, a static result, or a temporary short interval.
 - The diagram shows the failure path.
@@ -135,7 +150,7 @@ Ask, then answer in the same message using stated defaults:
 ## Workflow
 
 1. **Intake.** Fill the six slots from what the user said. `reference/designing.md`.
-2. **Shape.** Trigger, branches, loops, and where failure containment lives. `reference/designing.md`, `reference/patterns.md`.
+2. **Shape.** Trigger, branches, loops, and where failure containment lives. Choose loop or batch above a few hundred writes. `reference/designing.md`, `reference/patterns.md`.
 3. **Settings.** Concurrency, retry, timeout, run-after, secure inputs, pagination. `reference/settings.md`.
 4. **Edge cases.** Apply `reference/edge-cases.md` to the spec and surface the 3 most likely.
 5. **Verify.** Test without waiting: manual run with a narrow filter, Static result, or a temporary short interval. `reference/patterns.md` P8.
@@ -150,7 +165,7 @@ Ask, then answer in the same message using stated defaults:
 6. **Concurrency is stated.** Off means unlimited overlap. Say why overlap is safe, or set degree 1.
 7. **Time is explicit.** Named city zone, not `UTC`, when the business runs on local time; DST consequence stated.
 8. **Trigger inputs are frozen.** Expressions in trigger inputs are evaluated at save time. Compute dates in actions or trigger conditions.
-9. **Loops isolate per item.** One bad row does not end the run.
+9. **Loops isolate per item.** One bad row does not end the run. Above a few hundred writes, a batch script is allowed only when it catches per row and returns the failed keys (`reference/patterns.md` P14).
 10. **Ownership survives people.** Owner plus co-owner; recurrence runs on the maker's connections and license.
 11. **Budget stated under an hour.** Give the request estimate; arithmetic in `settings.md`.
 12. **Numbers from docs.** Limits, prices, badges, and labels come from a fetch or from the verified tables.
@@ -167,6 +182,7 @@ Read `reference/sources.md` for the fetch order, the URL index, and the review c
 | "Why did it not run / run twice / run late", silent failures | `reference/triage.md` |
 | Retry, concurrency, timeout, trigger condition, static result, secure inputs | `reference/settings.md` |
 | Loop failures, catch scopes, duplicate guards, business days, approvals | `reference/patterns.md` |
+| Bulk Excel read or append, or a key list past 5,000 rows | `reference/patterns.md` P14 |
 | Diagram shapes, mermaid safety, ASCII fallbacks | `reference/diagrams.md` |
 | Is this edge case real, did I miss one | `reference/edge-cases.md` |
 | What to cite, what changed | `reference/sources.md` |

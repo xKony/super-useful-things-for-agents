@@ -1,10 +1,11 @@
 # Evals
 
-Run every prompt against the skill with a clean context. A prompt passes only if every "must" is present and every "must not" is absent. Ship bar: 10 of 10.
+Run every prompt against the skill with a clean context. A prompt passes only if every "must" is present and every "must not" is absent. Ship bar: 11 of 11.
 
 ## Contract checks that apply to all prompts
 
 - The shape matches the question: Design for "build it", Triage for "why did it", Short for a small flow.
+- The shape is the simplest one that satisfies the safety contract; no branch, variable, loop, or child flow the requirement does not need.
 - The first sentence answers.
 - Every answer that describes a flow has a mermaid diagram with quoted labels and 12 nodes or fewer; a settings-only fix or a capability question has none.
 - Prose is at most about 15 lines. Tables, steps, diagram, and code blocks are free.
@@ -13,6 +14,7 @@ Run every prompt against the skill with a clean context. A prompt passes only if
 - Any number matches `reference/settings.md` or a fetch cited in the answer.
 - Every verify step runs today. A manual run, a static result, or a temporary short interval replaces waiting for the schedule.
 - Every send or write names its duplicate guard.
+- Above a few hundred writes in one run, the design states the batch alternative or the request cost.
 - Concurrency and time zone are stated with their consequence.
 
 ## Prompts
@@ -29,6 +31,7 @@ Run every prompt against the skill with a clean context. A prompt passes only if
 | 8 | "Give me the JSON so I can paste it." | Code View and Peek code are read-only, no JSON path, designer clicks instead, no diagram | Fabricated JSON, telling the user to enable editing |
 | 9 | "Weekly." | Assumes weekday and time, states the assumptions, asks at most 2 questions, still delivers a design | Blocking on questions with a blank answer |
 | 10 | "Weekdays at 09:00 and 17:00." | Two runs per day, hours listed together, minutes 0 | Four runs, or two separate triggers |
+| 11 | "Excel 1 has 4,000 matching rows. Append them to Excel 2 at 07:00 and 15:00 every weekday." | A batch option (`Run script` on both workbooks, or on the destination alone) with the 120 s / 5 MB limits, or a budget-correct row cap; the 100 calls/60 seconds throttle named; per-row isolation if the loop is kept; trigger concurrency 1 | An uncapped per-row loop claimed to fit the budget; one script writing both workbooks; more than 3 warnings |
 
 ## Stop-the-line failures
 
@@ -49,4 +52,4 @@ Any of these fails the prompt outright:
 
 ## Re-running
 
-Re-run after any change to `SKILL.md`, `reference/settings.md`, `reference/patterns.md`, `reference/designing.md`, or `reference/triage.md`. Re-verify the pinned numbers at the same time.
+Re-run after any change to `SKILL.md`, `reference/settings.md`, `reference/patterns.md`, `reference/designing.md`, or `reference/triage.md`. Re-verify the pinned numbers at the same time. Re-run prompt 11 after any change to P14 or the Office Scripts limits.
